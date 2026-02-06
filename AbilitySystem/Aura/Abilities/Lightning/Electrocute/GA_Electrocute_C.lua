@@ -10,6 +10,7 @@
 local M = UnLua.Class()
 
 function M:K2_ActivateAbility()
+    self.bCleaned = false
     self:EnforceImplementsCombatInterface()
 
     self.TargetData = UE.UTargetDataUnderMouse.CreateTargetDataUnderMouse(self)
@@ -117,6 +118,11 @@ function M:ApplyDamageSingleTarget(TargetActor)
 end
 
 function M:ClearTimerAndEndAbility()
+    if self.bCleaned then
+        return
+    end
+    self.bCleaned = true
+    
     UE.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.DamageAndCostTimer)
     self:PrepareToEndAbility()
     self:K2_CommitAbilityCooldown()
@@ -130,7 +136,9 @@ end
 
 function M:AdditionalTargetDied(DeadActor)
     self:RemoveShockLoopCueFromAdditionalTarget(DeadActor)
-    self.AdditionalTargets:RemoveItem(DeadActor)
+    if self.AdditionalTargets then
+        self.AdditionalTargets:RemoveItem(DeadActor)
+    end
 end
 
 function M:OnInputRelease(TimeHeld)
@@ -154,9 +162,12 @@ function M:PrepareToEndAbility()
 
     if self.ImplementsInterface then
         UE.UGameplayCueFunctionLibrary.RemoveGameplayCueOnActor(self.MouseHitActor, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), self.FirstTargetCueParams)
+        UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(self.MouseHitActor))
+        
         for i = 1, self.AdditionalTargets:Length() do
             local Element = self.AdditionalTargets:Get(i)
             self:RemoveShockLoopCueFromAdditionalTarget(Element)
+            UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(Element))
         end
     else
         UE.UGameplayCueFunctionLibrary.RemoveGameplayCueOnActor(self.AvatarActor, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), self.FirstTargetCueParams)
@@ -164,8 +175,10 @@ function M:PrepareToEndAbility()
 end
 
 function M:RemoveShockLoopCueFromAdditionalTarget(AdditionalTarget)
-    local Params = UE.UAbilitySystemBlueprintLibrary.MakeGameplayCueParameters(0, 0, nil, nil, nil, nil, nil, AdditionalTarget:K2_GetActorLocation(), nil, nil, nil, AdditionalTarget, nil, 1, 1, self.MouseHitActor.RootComponent, false)
-    UE.UGameplayCueFunctionLibrary.RemoveGameplayCueOnActor(AdditionalTarget, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), Params)
+    if AdditionalTarget and self.MouseHitActor then
+        local Params = UE.UAbilitySystemBlueprintLibrary.MakeGameplayCueParameters(0, 0, nil, nil, nil, nil, nil, AdditionalTarget:K2_GetActorLocation(), nil, nil, nil, AdditionalTarget, nil, 1, 1, self.MouseHitActor.RootComponent, false)
+        UE.UGameplayCueFunctionLibrary.RemoveGameplayCueOnActor(AdditionalTarget, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), Params)
+    end
 end
 
 function M:Cleanup()
@@ -188,7 +201,7 @@ function M:Cleanup()
     end
 
     if self.DelayTask then
-        self.DelayTask.OnRelease:Remove(self, self.ClearTimerAndEndAbility)
+        self.DelayTask.OnFinish:Remove(self, self.ClearTimerAndEndAbility)
         self.DelayTask:EndTask()
         self.DelayTask = nil
     end
