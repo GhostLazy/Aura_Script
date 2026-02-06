@@ -72,10 +72,12 @@ function M:SpawnElectricBeam()
     UE.UGameplayCueFunctionLibrary.AddGameplayCueOnActor(CueTarget, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), self.FirstTargetCueParams)
 
     if self.ImplementsInterface then
+        CueTarget:SetIsBeingShocked(true)
         self.AdditionalTargets = UE.TArray(UE.AActor)
         self.AdditionalTargets = self:StoreAdditionalTargets()
         for i = 1, self.AdditionalTargets:Length() do
             local Element = self.AdditionalTargets:Get(i)
+            Element:SetIsBeingShocked(true)
             self:AddShockLoopCueToAdditionalTarget(Element)
         end
     end
@@ -165,6 +167,7 @@ function M:PrepareToEndAbility()
     self.AvatarActor.CharacterMovement:SetMovementMode(UE.EMovementMode.MOVE_Walking, 0)
 
     if self.ImplementsInterface then
+        self.MouseHitActor:SetIsBeingShocked(false)
         UE.UGameplayCueFunctionLibrary.RemoveGameplayCueOnActor(self.MouseHitActor, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), self.FirstTargetCueParams)
         if self:K2_HasAuthority() then
             UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(self.MouseHitActor))
@@ -172,6 +175,7 @@ function M:PrepareToEndAbility()
         
         for i = 1, self.AdditionalTargets:Length() do
             local Element = self.AdditionalTargets:Get(i)
+            Element:SetIsBeingShocked(false)
             self:RemoveShockLoopCueFromAdditionalTarget(Element)
             if self:K2_HasAuthority() then
                 UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(Element))
