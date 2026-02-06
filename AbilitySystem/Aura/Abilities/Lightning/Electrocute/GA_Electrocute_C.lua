@@ -146,10 +146,14 @@ function M:OnInputRelease(TimeHeld)
     self.MinSpellTime = 0.5
 
     if self.TimeHeld < self.MinSpellTime then
-        local Duration = self.MinSpellTime - self.TimeHeld
-        self.DelayTask = UE.UAbilityTask_WaitDelay.WaitDelay(self, Duration)
-        self.DelayTask.OnFinish:Add(self, self.ClearTimerAndEndAbility)
-        self.DelayTask:ReadyForActivation()
+        if self:K2_HasAuthority() then
+            local Duration = self.MinSpellTime - self.TimeHeld
+            self.DelayTask = UE.UAbilityTask_WaitDelay.WaitDelay(self, Duration)
+            self.DelayTask.OnFinish:Add(self, self.ClearTimerAndEndAbility)
+            self.DelayTask:ReadyForActivation()
+        else
+            self:PrepareToEndAbility()
+        end
     else
         self:ClearTimerAndEndAbility()
     end
@@ -162,12 +166,16 @@ function M:PrepareToEndAbility()
 
     if self.ImplementsInterface then
         UE.UGameplayCueFunctionLibrary.RemoveGameplayCueOnActor(self.MouseHitActor, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), self.FirstTargetCueParams)
-        UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(self.MouseHitActor))
+        if self:K2_HasAuthority() then
+            UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(self.MouseHitActor))
+        end
         
         for i = 1, self.AdditionalTargets:Length() do
             local Element = self.AdditionalTargets:Get(i)
             self:RemoveShockLoopCueFromAdditionalTarget(Element)
-            UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(Element))
+            if self:K2_HasAuthority() then
+                UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(Element))
+            end
         end
     else
         UE.UGameplayCueFunctionLibrary.RemoveGameplayCueOnActor(self.AvatarActor, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), self.FirstTargetCueParams)
