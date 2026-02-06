@@ -46,6 +46,9 @@ end
 function M:OnEventReceived(Payload)
     self:InShockLoop()
     self:SpawnElectricBeam()
+    
+    self.DamageDeltaTime = 0.1
+    self.DamageAndCostTimer = UE.UKismetSystemLibrary.K2_SetTimer(self, "DamageAndCost", self.DamageDeltaTime, true)
 end
 
 function M:InShockLoop()
@@ -82,10 +85,66 @@ function M:AddShockLoopCueToAdditionalTarget(AdditionalTarget)
     UE.UGameplayCueFunctionLibrary.AddGameplayCueOnActor(AdditionalTarget, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), Params)
 end
 
-function M:OnInputRelease(TimeHeld)
+function M:DamageAndCost()
+    if self:K2_CommitAbilityCost() then
+        self:ApplyDamage()
+    else
+        self:ClearTimerAndEndAbility()
+    end
+end
+
+function M:ApplyDamage()
+    self:ApplyDamageSingleTarget(self.MouseHitActor)
+
+    if self.AdditionalTargets then
+        for i = 1, self.AdditionalTargets:Length() do
+            local Element = self.AdditionalTargets:Get(i)
+            self:ApplyDamageSingleTarget(Element)
+        end
+    end
+end
+
+function M:ApplyDamageSingleTarget(TargetActor)
+    local SourceASC = self:GetAbilitySystemComponentFromActorInfo()
+    local EffectContext = SourceASC:MakeEffectContext()
+    local SpecHandle = SourceASC:MakeOutgoingSpec(self.DamageEffectClass, self:GetAbilityLevel(), EffectContext)
+
+    UE.UAbilitySystemBlueprintLibrary.AssignTagSetByCallerMagnitude(SpecHandle, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("Damage.Lightning"), self:GetDamageAtLevel())
+    local TargetASC = UE.UAbilitySystemBlueprintLibrary.GetAbilitySystemComponent(TargetActor)
+    if TargetASC then
+        TargetASC:BP_ApplyGameplayEffectSpecToSelf(SpecHandle)
+    end
+end
+
+function M:ClearTimerAndEndAbility()
+    UE.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.DamageAndCostTimer)
     self:PrepareToEndAbility()
-    self:Cleanup()
+    self:K2_CommitAbilityCooldown()
     self:K2_EndAbility()
+end
+
+function M:PrimaryTargetDied(DeadActor)
+    UE.UGameplayCueFunctionLibrary.RemoveGameplayCueOnActor(DeadActor, UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ShockLoop"), self.FirstTargetCueParams)
+    self:ClearTimerAndEndAbility()
+end
+
+function M:AdditionalTargetDied(DeadActor)
+    self:RemoveShockLoopCueFromAdditionalTarget(DeadActor)
+    self.AdditionalTargets:RemoveItem(DeadActor)
+end
+
+function M:OnInputRelease(TimeHeld)
+    self.TimeHeld = TimeHeld
+    self.MinSpellTime = 0.5
+
+    if self.TimeHeld < self.MinSpellTime then
+        local Duration = self.MinSpellTime - self.TimeHeld
+        self.DelayTask = UE.UAbilityTask_WaitDelay.WaitDelay(self, Duration)
+        self.DelayTask.OnFinish:Add(self, self.ClearTimerAndEndAbility)
+        self.DelayTask:ReadyForActivation()
+    else
+        self:ClearTimerAndEndAbility()
+    end
 end
 
 function M:PrepareToEndAbility()
@@ -128,6 +187,12 @@ function M:Cleanup()
         self.WaitRelease = nil
     end
 
+    if self.DelayTask then
+        self.DelayTask.OnRelease:Remove(self, self.ClearTimerAndEndAbility)
+        self.DelayTask:EndTask()
+        self.DelayTask = nil
+    end
+
     self.MouseHitActor = nil
     self.MouseHitLocation = nil
     self.OwnerPlayerController = nil
@@ -137,6 +202,12 @@ function M:Cleanup()
     self.AvatarActor = nil
     self.ImplementsInterface = nil
     self.AdditionalTargets = nil
+end
+
+function M:K2_EndAbility()
+    self:Cleanup()
+    self.TimeHeld = 0
+    self.Overridden.K2_EndAbility(self)
 end
 
 return M
