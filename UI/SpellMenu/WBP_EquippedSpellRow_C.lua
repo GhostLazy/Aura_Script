@@ -17,9 +17,6 @@ function M:PreConstruct(IsDesignTime)
     self:UpdateBoxSize()
 end
 
--- function M:Construct()
--- end
-
 function M:SetWidgetControllers()
     self.Globe_LMB:SetWidgetController(self.WidgetController)
     self.Globe_RMB:SetWidgetController(self.WidgetController)

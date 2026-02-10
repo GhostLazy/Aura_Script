@@ -229,10 +229,10 @@ function M:Cleanup()
     self.AdditionalTargets = nil
 end
 
-function M:K2_EndAbility()
+function M:K2_OnEndAbility(bWasCancelled)
     self:Cleanup()
     self.TimeHeld = 0
-    self.Overridden.K2_EndAbility(self)
+    self.Overridden.K2_OnEndAbility(self, bWasCancelled)
 end
 
 return M
