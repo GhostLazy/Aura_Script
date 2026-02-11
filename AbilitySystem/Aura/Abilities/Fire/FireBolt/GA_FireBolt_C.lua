@@ -65,9 +65,9 @@ function M:Cleanup()
     self.HitActor = nil
 end
 
-function M:K2_EndAbility()
+function M:K2_OnEndAbility(bWasCancelled)
     self:Cleanup()
-    self.Overridden.K2_EndAbility(self)
+    self.Overridden.K2_OnEndAbility(self, bWasCancelled)
 end
 
 return M
