@@ -45,8 +45,10 @@ function M:SpawnShard()
     if self.Count < self.NumPoints then
         local Element = self.GroundPoints:Get(self.Count + 1)
         local ElementLocation = Element:K2_GetComponentLocation()
-        UE.UKismetSystemLibrary.DrawDebugSphere(self, ElementLocation, 20, 12, UE.FLinearColor.White, 20, 0)
         self.Count = self.Count + 1
+        
+        local CueParams = UE.UAbilitySystemBlueprintLibrary.MakeGameplayCueParameters(0, 0, nil, nil, nil, nil, nil, ElementLocation, nil, nil, nil, nil, nil, 1, 1, nil, false)
+        self:K2_ExecuteGameplayCueWithParams(UE.UAuraAbilitySystemLibrary.RequestGameplayTag("GameplayCue.ArcaneShards"), CueParams)
     else
         coroutine.resume(coroutine.create(self.Delay), self)
     end
