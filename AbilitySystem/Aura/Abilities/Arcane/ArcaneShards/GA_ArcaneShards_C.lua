@@ -38,7 +38,7 @@ function M:OnValidData(DataHandle)
     self.Overridden.SpawnPointCollection(self)  --self.PointCollection = self.Overridden.SpawnPointCollection(self)
     
     self.YawOverride = UE.UKismetMathLibrary.RandomFloatInRange(0, 360)
-    self.NumPoints = 4
+    self.NumPoints = 1
     self.Count = 0
     self.GroundPoints = self.PointCollection:GetGroundPoints(self.MouseHitLocation, self.NumPoints, self.YawOverride)
 
@@ -60,6 +60,16 @@ function M:SpawnShard()
     if self.Count < self.NumPoints then
         local Element = self.GroundPoints:Get(self.Count + 1)
         local ElementLocation = Element:K2_GetComponentLocation()
+        --UE.UKismetSystemLibrary.DrawDebugSphere(self, ElementLocation, self.RadialDamageInnerRadius, 12, UE.FLinearColor.White, 20, 0)
+        --UE.UKismetSystemLibrary.DrawDebugSphere(self, ElementLocation, self.RadialDamageOuterRadius, 12, UE.FLinearColor(0, 0, 1, 1), 20, 0)
+        local ActorsToIgnore = UE.TArray(UE.AActor)
+        local OverlappingPlayers = UE.TArray(UE.AActor)
+        ActorsToIgnore:Add(self.AvatarActor)
+        UE.UAuraAbilitySystemLibrary.GetLivePlayersWithinRadius(self.AvatarActor, OverlappingPlayers, ActorsToIgnore, self.RadialDamageOuterRadius, ElementLocation)
+        for i = 1, OverlappingPlayers:Length() do
+            local Target = OverlappingPlayers:Get(i)
+            UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(Target, ElementLocation))
+        end
         self.Count = self.Count + 1
         
         local CueParams = UE.UAbilitySystemBlueprintLibrary.MakeGameplayCueParameters(0, 0, nil, nil, nil, nil, nil, ElementLocation, nil, nil, nil, nil, nil, 1, 1, nil, false)
