@@ -60,15 +60,17 @@ function M:SpawnShard()
     if self.Count < self.NumPoints then
         local Element = self.GroundPoints:Get(self.Count + 1)
         local ElementLocation = Element:K2_GetComponentLocation()
-        --UE.UKismetSystemLibrary.DrawDebugSphere(self, ElementLocation, self.RadialDamageInnerRadius, 12, UE.FLinearColor.White, 20, 0)
-        --UE.UKismetSystemLibrary.DrawDebugSphere(self, ElementLocation, self.RadialDamageOuterRadius, 12, UE.FLinearColor(0, 0, 1, 1), 20, 0)
+        
         local ActorsToIgnore = UE.TArray(UE.AActor)
         local OverlappingPlayers = UE.TArray(UE.AActor)
         ActorsToIgnore:Add(self.AvatarActor)
         UE.UAuraAbilitySystemLibrary.GetLivePlayersWithinRadius(self.AvatarActor, OverlappingPlayers, ActorsToIgnore, self.RadialDamageOuterRadius, ElementLocation)
+        
         for i = 1, OverlappingPlayers:Length() do
-            local Target = OverlappingPlayers:Get(i)
-            UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(Target, ElementLocation))
+            local TargetActor = OverlappingPlayers:Get(i)
+            local DirectionOverride = TargetActor:K2_GetActorLocation() - ElementLocation
+            UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self:MakeDamageEffectParamsFromClassDefaults(
+                    TargetActor, ElementLocation, true, DirectionOverride, true, DirectionOverride, true, 35))
         end
         self.Count = self.Count + 1
         
