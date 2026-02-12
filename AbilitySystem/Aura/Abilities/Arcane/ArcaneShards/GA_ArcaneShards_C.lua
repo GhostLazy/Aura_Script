@@ -38,7 +38,7 @@ function M:OnValidData(DataHandle)
     self.Overridden.SpawnPointCollection(self)  --self.PointCollection = self.Overridden.SpawnPointCollection(self)
     
     self.YawOverride = UE.UKismetMathLibrary.RandomFloatInRange(0, 360)
-    self.NumPoints = 1
+    self.NumPoints = math.min(self:GetAbilityLevel(), self.MaxNumShards)
     self.Count = 0
     self.GroundPoints = self.PointCollection:GetGroundPoints(self.MouseHitLocation, self.NumPoints, self.YawOverride)
 
@@ -54,6 +54,7 @@ function M:OnEventReceived(Payload)
     self.ShardSpawnTimer = UE.UKismetSystemLibrary.K2_SetTimer(self, "SpawnShard", 0.2, true)
     self.AvatarActor:HideMagicCircle()
     self:SpawnShard()
+    self:K2_CommitAbility()
 end
 
 function M:SpawnShard()

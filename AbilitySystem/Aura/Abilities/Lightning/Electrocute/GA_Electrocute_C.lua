@@ -144,6 +144,12 @@ function M:AdditionalTargetDied(DeadActor)
 end
 
 function M:OnInputRelease(TimeHeld)
+    if self.WaitRelease then
+        self.WaitRelease.OnRelease:Remove(self, self.OnInputRelease)
+        self.WaitRelease:EndTask()
+        self.WaitRelease = nil
+    end
+    
     self.TimeHeld = TimeHeld
     self.MinSpellTime = 0.5
 
@@ -204,12 +210,6 @@ function M:Cleanup()
         self.Event.EventReceived:Remove(self, self.OnEventReceived)
         self.Event:EndTask()
         self.Event = nil
-    end
-
-    if self.WaitRelease then
-        self.WaitRelease.OnRelease:Remove(self, self.OnInputRelease)
-        self.WaitRelease:EndTask()
-        self.WaitRelease = nil
     end
 
     if self.DelayTask then
