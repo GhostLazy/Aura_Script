@@ -53,8 +53,12 @@ end
 function M:OnEventReceived(Payload)
     self.ShardSpawnTimer = UE.UKismetSystemLibrary.K2_SetTimer(self, "SpawnShard", 0.2, true)
     self.AvatarActor:HideMagicCircle()
+
+    if not self:K2_CommitAbility() then
+        self:K2_EndAbility()
+        return
+    end
     self:SpawnShard()
-    self:K2_CommitAbility()
 end
 
 function M:SpawnShard()
