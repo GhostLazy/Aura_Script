@@ -38,6 +38,27 @@ function M:OnReturningTimelineUpdate(Alpha)
     self.ExplodeDistance = 150
     if UE.UKismetMathLibrary.VSize(self:K2_GetActorLocation() - self.ReturnToActor:K2_GetActorLocation()) <= self.ExplodeDistance then
         self:OnHit()
+
+        local ActorsToIgnore = UE.TArray(UE.AActor)
+        local OverlappingPlayers = UE.TArray(UE.AActor)
+        ActorsToIgnore:Add(self:GetOwner())
+        ActorsToIgnore:Add(self)
+        UE.UAuraAbilitySystemLibrary.GetLivePlayersWithinRadius(self, OverlappingPlayers, ActorsToIgnore, 300, self:K2_GetActorLocation())
+        UE.UAuraAbilitySystemLibrary.SetIsRadialDamageEffectParam(self.ExplosionDamageParams, true, 50, 300, self:K2_GetActorLocation())
+
+        for i = 1, OverlappingPlayers:Length() do
+            local TargetActor = OverlappingPlayers:Get(i)
+            local TargetLocation = TargetActor:K2_GetActorLocation()
+            local KnockbackDirection = TargetLocation - self:K2_GetActorLocation()
+            local Rotator = UE.UKismetMathLibrary.MakeRotFromX(KnockbackDirection)
+            
+            UE.UAuraAbilitySystemLibrary.SetTargetEffectParamsASC(self.ExplosionDamageParams, UE.UAbilitySystemBlueprintLibrary.GetAbilitySystemComponent(TargetActor))
+            UE.UAuraAbilitySystemLibrary.SetKnockbackDirection(self.ExplosionDamageParams, UE.UKismetMathLibrary.GetForwardVector(UE.UKismetMathLibrary.MakeRotator(Rotator.X, 45, Rotator.Z)), 800)
+            UE.UAuraAbilitySystemLibrary.SetDeathImpulseDirection(self.ExplosionDamageParams, UE.UKismetMathLibrary.GetForwardVector(UE.UKismetMathLibrary.MakeRotator(Rotator.X, 45, Rotator.Z)), 600)
+
+            UE.UAuraAbilitySystemLibrary.ApplyDamageEffect(self.ExplosionDamageParams)
+        end
+        
         self:K2_DestroyActor()
     end
 end
