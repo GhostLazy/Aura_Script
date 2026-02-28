@@ -23,10 +23,15 @@ local M = UnLua.Class()
 
 function M:BlueprintInitializeWidget()
     self.Button_SelectSlot.Button.OnClicked:Add(self, self.OnSelectSlotClicked)
+    self.BP_LoadSlotViewModel.EnableSelectSlotButton:Add(self, self.OnButtonEnabled)
 end
 
 function M:OnSelectSlotClicked()
-    self:FindLoadScreenViewModel():SelectSlotButtonPressed(self.SlotIndex)
+    self.BP_LoadScreenViewModel:SelectSlotButtonPressed(self.SlotIndex)
+end
+
+function M:OnButtonEnabled(Enable)
+    self.Button_SelectSlot.Button:SetIsEnabled(Enable)
 end
 
 return M

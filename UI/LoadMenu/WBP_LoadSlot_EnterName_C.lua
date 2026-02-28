@@ -27,7 +27,7 @@ end
 
 function M:OnNewSlotClicked()
     local EnteredName = UE.UKismetTextLibrary.Conv_TextToString(self.EditableText_EnterName:GetText())
-    self:FindLoadScreenViewModel():NewSlotButtonPressed(self.SlotIndex, EnteredName)
+    self.BP_LoadScreenViewModel:NewSlotButtonPressed(self.SlotIndex, EnteredName)
 end
 
 return M
