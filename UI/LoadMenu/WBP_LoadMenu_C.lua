@@ -41,10 +41,16 @@ function M:OnDeleteClicked()
     Widget:SetPositionInViewport(UE.FVector2D(PositionX, 100), true)
 
     Widget.CancelClickedDelegate:Add(self, self.EnablePlayDeleteButton)
+    Widget.DeleteClickedDelegate:Add(self, self.OnSlotDeleted)
 end
 
 function M:OnQuitClicked()
     UE.UGameplayStatics.OpenLevel(self, "MainMenu")
+end
+
+function M:OnSlotDeleted()
+    self.BP_LoadScreenViewModel:DeleteButtonPressed()
+    self:EnablePlayDeleteButton()
 end
 
 function M:BlueprintInitializeWidget()
