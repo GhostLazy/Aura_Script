@@ -16,11 +16,32 @@ local M = UnLua.Class()
 --end
 
 function M:Construct()
+    self.Button_Play.Button:SetIsEnabled(false)
+    self.Button_Delete.Button:SetIsEnabled(false)
+    
+    self.Button_Delete.Button.OnClicked:Add(self, self.OnDeleteClicked)
     self.Button_Quit.Button.OnClicked:Add(self, self.OnQuitClicked)
 end
 
 --function M:Tick(MyGeometry, InDeltaTime)
 --end
+
+function M:OnDeleteClicked()
+    self.Button_Play.Button:SetIsEnabled(false)
+    self.Button_Delete.Button:SetIsEnabled(false)
+    
+    local WidgetClass = UE.UClass.Load("/Game/BluePrints/UI/AreYouSure/WBP_AreYouSure.WBP_AreYouSure_C")
+    local Widget = UE.UWidgetBlueprintLibrary.Create(self, WidgetClass, nil)
+    Widget:AddToViewport()
+    
+    local ViewportSize = UE.UWidgetLayoutLibrary.GetViewportSize(self)
+    local ViewportScale = UE.UWidgetLayoutLibrary.GetViewportScale(self)
+    local WidgetWidth = Widget.SizeBox_Root.WidthOverride
+    local PositionX = (ViewportSize.X - WidgetWidth * ViewportScale) / 2
+    Widget:SetPositionInViewport(UE.FVector2D(PositionX, 100), true)
+
+    Widget.CancelClickedDelegate:Add(self, self.EnablePlayDeleteButton)
+end
 
 function M:OnQuitClicked()
     UE.UGameplayStatics.OpenLevel(self, "MainMenu")
@@ -30,6 +51,13 @@ function M:BlueprintInitializeWidget()
     self.Switcher_0:InitializeSlot(0)
     self.Switcher_1:InitializeSlot(1)
     self.Switcher_2:InitializeSlot(2)
+    
+    self.BP_LoadScreenViewModel.SlotSelected:Add(self, self.EnablePlayDeleteButton)
+end
+
+function M:EnablePlayDeleteButton()
+    self.Button_Play.Button:SetIsEnabled(true)
+    self.Button_Delete.Button:SetIsEnabled(true)
 end
 
 return M
