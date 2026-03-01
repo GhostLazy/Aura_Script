@@ -59,11 +59,16 @@ function M:BlueprintInitializeWidget()
     self.Switcher_2:InitializeSlot(2)
     
     self.BP_LoadScreenViewModel.SlotSelected:Add(self, self.EnablePlayDeleteButton)
+    self.Button_Play.Button.OnClicked:Add(self, self.OnPlayPressed)
 end
 
 function M:EnablePlayDeleteButton()
     self.Button_Play.Button:SetIsEnabled(true)
     self.Button_Delete.Button:SetIsEnabled(true)
+end
+
+function M:OnPlayPressed()
+    self.BP_LoadScreenViewModel:PlayButtonPressed()
 end
 
 return M
