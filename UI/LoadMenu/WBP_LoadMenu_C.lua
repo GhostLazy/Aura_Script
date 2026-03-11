@@ -50,7 +50,8 @@ end
 
 function M:OnSlotDeleted()
     self.BP_LoadScreenViewModel:DeleteButtonPressed()
-    self:EnablePlayDeleteButton()
+    self.Button_Play.Button:SetIsEnabled(false)
+    self.Button_Delete.Button:SetIsEnabled(false)
 end
 
 function M:BlueprintInitializeWidget()
