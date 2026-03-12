@@ -45,7 +45,12 @@ function M:OnDeleteClicked()
 end
 
 function M:OnQuitClicked()
-    UE.UGameplayStatics.OpenLevel(self, "MainMenu")
+    local GameMode = UE.UGameplayStatics.GetGameMode(self)
+    if UE.UKismetSystemLibrary.IsValid(GameMode) then
+        UE.UGameplayStatics.OpenLevel(self, "MainMenu")
+    else
+        UE.UKismetSystemLibrary.QuitGame(self, nil, UE.EQuitPreference.Quit, false)
+    end
 end
 
 function M:OnSlotDeleted()
